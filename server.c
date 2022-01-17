@@ -5,6 +5,52 @@
 #include<sys/types.h>
 #include<sys/socket.h>
 #include<netinet/in.h>  //sockaddr_in
+#include<ctype.h>
+
+char * Decrypter(char *str, int key)
+{
+    for(int i =0; i< strlen(str); i++)
+    {
+        if(str[i]>=' ' && str[i]<='/')
+        {
+            if(str[i]-key < ' ')
+                str[i] = str[i] - key + 16;
+            
+            else
+                str[i] = str[i] - key;
+
+        }            
+        else if(str[i]>='a' && str[i] <='z')
+        {
+            if(str[i]-key < 'a')
+                str[i] = str[i] - key + 26;
+            
+            else
+                str[i] = str[i] - key;
+        }
+        else if(str[i]>='A' && str[i] <='Z')
+        {
+            if(str[i]-key < 'A')
+                str[i] = str[i] - key + 26;
+            
+            else
+                str[i] = str[i] - key;
+        }
+
+        else if(str[i]>='0' && str[i]<='9')
+        {
+            if(str[i]-key<'0')
+                str[i] = str[i] - key + 10;
+            else
+                str[i] = str[i] - key;
+        }
+
+    }
+    // printf("\nEncrpted key is : %s\n",str);
+    return str;
+
+
+}
 
 void error(const char *msg)
 {
@@ -55,20 +101,61 @@ int main(int argc, char *argv[])
 
     int ch = 0;
     char file[] = "glad_received.txt";
-    fp = fopen(file, "a");
-    int words;
+    int words=0,key;
+    char tempChar,tempWord,*encrypt,*decrypt;
+
+    fp = fopen(file, "a+");
+    if(fp == NULL)
+    {
+        perror("Error Opening file");
+        return -1;
+    }
 
     read(newsockfd, &words, sizeof(int));
+    read(newsockfd,&key,sizeof(int));
 
     while(ch!= words){
         read(newsockfd, buffer, 255);
-        fprintf(fp, "%s ", buffer);
+        fprintf(fp, "%s", buffer);
         ch++;
     }
+    rewind(fp);
     printf("\nThe file has been received successfully. It is saved by the name %s\n",file);
 
 
+    FILE * df;
+    df = fopen("decryptedFile.txt","a");
+    if(df == NULL)
+    {
+        perror("Error Opening file");
+        return -1;
+    }
 
+    // saving the recoded data
+    words  = 0;
+    while((tempChar = fgetc(fp)) != EOF)
+	{
+		fscanf(fp,"%s",buffer);
+		if(isspace(tempChar) || tempChar=='\t')
+		words++;
+	}
+    words+=1;
+    rewind(fp);
+    
+    fprintf(df,"\nThe Decryped message is: ");
+    // Decrypting the file onto another file
+
+    while(tempWord != EOF)
+	{
+		fscanf(fp,"%s", buffer);
+        decrypt = Decrypter(buffer,key);
+        fprintf(df,"%s",decrypt);
+        printf(" %s ",decrypt);
+		tempWord = fgetc(fp);
+	}    
+    
+    fclose(df);
+    fclose(fp);
     close(newsockfd);
     close(sockfd);
 

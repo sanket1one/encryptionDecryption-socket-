@@ -16,6 +16,51 @@
 #include<netdb.h>   //define the hostent structure
 #include<ctype.h>	//isspace
 
+char * Decrypter(char *str, int key)
+{
+    for(int i =0; i< strlen(str); i++)
+    {
+        if(str[i]>=' ' && str[i]<='/')
+        {
+            if(str[i]-key < ' ')
+                str[i] = str[i] - key + 16;
+            
+            else
+                str[i] = str[i] - key;
+
+        }            
+        else if(str[i]>='a' && str[i] <='z')
+        {
+            if(str[i]- key < 'a')
+                str[i] = str[i] - key + 26;
+            
+            else
+                str[i] = str[i] - key;
+        }
+        else if(str[i]>='A' && str[i] <='Z')
+        {
+            if(str[i]-key < 'A')
+                str[i] = str[i] - key + 26;
+            
+            else
+                str[i] = str[i] - key;
+        }
+
+        else if(str[i]>='0' && str[i]<='9')
+        {
+            if(str[i]-key<'0')
+                str[i] = str[i] - key + 10;
+            else
+                str[i] = str[i] - key;
+        }
+
+    }
+    // printf("\nEncrpted key is : %s\n",str);
+    return str;
+
+
+}
+
 char * caeserCypher(char  *str,int key){
     // char str[maxlength];
     
@@ -25,8 +70,15 @@ char * caeserCypher(char  *str,int key){
 
     for(int i =0; i< strlen(str); i++)
     {
-        if(str[i]==' ')
-            continue;
+        if(str[i]>=' ' && str[i]<='/')
+        {
+            if(str[i]+key > '/')
+                str[i] = str[i] +key - 16;
+            
+            else
+                str[i] = str[i] + key;
+
+        }            
         else if(str[i]>='a' && str[i] <='z')
         {
             if(str[i]+key > 'z')
@@ -99,7 +151,7 @@ int main(int argc, char *argv[])
 	
 	FILE *f;
 	int words = 0,key;
-	char c,ch,*encrypt;
+	char c,ch,*encrypt,*decrypt;
     char file_name[]= "glad.txt";
 
     // printf("Enter the name of file you want to send to the server: ");
@@ -123,19 +175,32 @@ int main(int argc, char *argv[])
 	}
     words+=1;
 	write(sockfd, &words, sizeof(int));
+    write(sockfd, &key, sizeof(int));
 	rewind(f);  //to point the file pointer at the start of the file
 	printf("\nThe encrypted string is: ");
 	while(ch != EOF)
 	{
 		fscanf(f,"%s", buffer);
         encrypt = caeserCypher(buffer,key);
-        printf(" %s ",encrypt);
+        printf("%s",encrypt);
 		write(sockfd, encrypt, 255);
 		ch = fgetc(f);
 	}
 	printf("\nThe file has been successfully sent.Thank you\n");
+    rewind(f);
 
-    bzero(buffer, 255);
+    printf("\n The decrypted string is: ");
+    while(ch!= EOF)
+    {
+       	fscanf(f,"%s", buffer);
+        decrypt = Decrypter(buffer,key);
+        printf("%s",decrypt);
+		ch = fgetc(f);
+
+    }
+    printf("\n");
+    
+    fclose(f);
 
     close(sockfd);
     return 0;
